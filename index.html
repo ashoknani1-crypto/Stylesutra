@@ -396,6 +396,34 @@ body::before{
 .feed-post-footer{padding:.75rem 1rem;display:flex;align-items:center;gap:.5rem}
 .feed-post-footer .btn-sm{margin-right:auto}
 
+/* ─── API KEY BANNER ──────────────────────────────── */
+.api-banner{
+  background:linear-gradient(135deg,rgba(245,200,66,.12),rgba(240,123,58,.1));
+  border:1px solid rgba(245,200,66,.35);border-radius:var(--radius);
+  padding:1rem 1.25rem;margin-bottom:1rem;
+}
+.api-banner-title{display:flex;align-items:center;gap:.5rem;font-size:.85rem;font-weight:600;color:var(--gold);margin-bottom:.4rem}
+.api-banner-title i{font-size:18px}
+.api-banner p{font-size:.78rem;color:var(--text2);line-height:1.6;margin-bottom:.75rem}
+.api-banner p a{color:var(--teal);text-decoration:underline}
+.api-key-row{display:flex;gap:.5rem}
+.api-key-row input{
+  flex:1;padding:.5rem .85rem;border-radius:var(--radius-sm);
+  border:1px solid rgba(245,200,66,.3);background:rgba(0,0,0,.25);
+  color:var(--text);font-size:.8rem;outline:none;font-family:monospace;
+}
+.api-key-row input:focus{border-color:rgba(245,200,66,.6)}
+.api-key-saved{display:none;font-size:.75rem;color:#4ade80;margin-top:.4rem;align-items:center;gap:.3rem}
+.api-key-saved i{font-size:14px}
+.api-err-box{
+  background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.3);
+  border-radius:var(--radius-sm);padding:.85rem 1rem;width:100%;text-align:left;
+}
+.api-err-box h4{font-size:.82rem;font-weight:600;color:#ff8080;margin-bottom:.4rem;display:flex;align-items:center;gap:.4rem}
+.api-err-box p{font-size:.76rem;color:var(--text2);line-height:1.6;margin-bottom:.35rem}
+.api-err-box a{color:var(--teal);text-decoration:underline}
+.api-err-box code{background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px;font-size:.74rem;font-family:monospace}
+
 /* ─── TOAST ───────────────────────────────────────── */
 .toast{
   position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;
@@ -511,6 +539,21 @@ body::before{
           <button class="stab" onclick="setSTab(this,'tryon-history')">My looks</button>
         </div>
         <div id="tryon-main">
+          <!-- API KEY BANNER -->
+          <div class="api-banner" id="api-banner">
+            <div class="api-banner-title"><i class="ti ti-key"></i> Anthropic API Key required to use AI features</div>
+            <p>
+              This app uses <strong>Claude AI</strong> (by Anthropic) to generate outfit suggestions and room décor ideas.<br>
+              To use AI features, you need a free API key from Anthropic.<br>
+              <strong>How to get one:</strong> Visit <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com → API Keys</a> → Create Key → paste it below.<br>
+              Your key is stored only in your browser and never sent anywhere except Anthropic's servers.
+            </p>
+            <div class="api-key-row">
+              <input type="password" id="api-key-input" placeholder="sk-ant-api03-xxxxxxxxxxxxxxxx" oninput="checkApiKey(this.value)">
+              <button class="btn btn-sm" style="background:rgba(245,200,66,.15);border-color:rgba(245,200,66,.4);color:var(--gold);white-space:nowrap" onclick="saveApiKey()"><i class="ti ti-check"></i> Save key</button>
+            </div>
+            <div class="api-key-saved" id="api-key-saved"><i class="ti ti-circle-check"></i> API key saved — AI features are now active!</div>
+          </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
             <!-- LEFT -->
             <div>
@@ -637,7 +680,7 @@ body::before{
                   <div class="chip" onclick="setRoomType(this,'Kitchen')">Kitchen</div>
                   <div class="chip" onclick="setRoomType(this,'Home office')">Office</div>
                   <div class="chip" onclick="setRoomType(this,'Pooja room')">Pooja room</div>
-                  <div class="chip" onclick="setRoomType(this,'Kid's room')">Kid's room</div>
+                  <div class="chip" onclick="setRoomType(this,'Kid\'s room')">Kid's room</div>
                 </div>
                 <div class="form-group">
                   <label>Décor style</label>
@@ -894,6 +937,31 @@ const state = {
 
 const USERS = {'demo@stylesutra.in':'demo123','ashok@aidesignsutra.com':'sutra2025','test@test.com':'test123'};
 
+function saveApiKey(){
+  const key = document.getElementById('api-key-input')?.value?.trim();
+  if(!key){ showToast('Please paste your API key first'); return; }
+  if(!key.startsWith('sk-ant')){ showToast('Key should start with sk-ant-api03-...'); return; }
+  localStorage.setItem('ss_api_key', key);
+  document.getElementById('api-key-saved').style.display='flex';
+  document.getElementById('api-banner').style.borderColor='rgba(74,222,128,.35)';
+  showToast('API key saved! AI features are now active.');
+}
+
+function checkApiKey(val){
+  const saved = document.getElementById('api-key-saved');
+  if(saved) saved.style.display='none';
+}
+
+function loadSavedKey(){
+  const saved = localStorage.getItem('ss_api_key');
+  if(saved){
+    const inp = document.getElementById('api-key-input');
+    if(inp){ inp.value=saved; }
+    document.getElementById('api-key-saved').style.display='flex';
+    document.getElementById('api-banner').style.borderColor='rgba(74,222,128,.35)';
+  }
+}
+
 // ── AUTH ───────────────────────────────────────────────────────
 function showAuthTab(tab){
   document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',['login','signup'][i]===tab));
@@ -923,6 +991,7 @@ function doLogout(){
 
 // ── INIT ───────────────────────────────────────────────────────
 function initApp(){
+  loadSavedKey();
   renderFeed();
   renderChatList();
   renderFriends();
@@ -995,8 +1064,12 @@ function toggleChip(el,cat){
 function setRoomType(el,rt){ state.roomType=rt; document.querySelectorAll('#screen-decor .chip-grid .chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); }
 
 // ── AI CALLS ───────────────────────────────────────────────────
+function getApiKey(){
+  return document.getElementById('api-key-input')?.value?.trim() || localStorage.getItem('ss_api_key') || '';
+}
+
 async function callAI(prompt, resultId, spinId, barId, fillId, actionsId){
-  document.getElementById(resultId.replace('-result','-empty')||resultId+'empty')?.style && (document.getElementById(resultId.replace('-result','')+'_empty')?.style.display||'');
+  const apiKey = getApiKey();
   const empties = {tryon:'tryon-empty', decor:'decor-empty'};
   Object.values(empties).forEach(e=>{ const el=document.getElementById(e); if(el)el.style.display='none'; });
   document.getElementById(spinId).style.display='block';
@@ -1005,15 +1078,43 @@ async function callAI(prompt, resultId, spinId, barId, fillId, actionsId){
   if(actionsId) document.getElementById(actionsId).style.display='none';
   document.getElementById(barId).style.display='block';
   animateBar(fillId);
+
+  if(!apiKey || !apiKey.startsWith('sk-ant')){
+    document.getElementById(spinId).style.display='none';
+    document.getElementById(barId).style.display='none';
+    if(aiEl){
+      aiEl.innerHTML=`<div class="api-err-box">
+        <h4><i class="ti ti-alert-triangle"></i> API Key missing or invalid</h4>
+        <p>You need an Anthropic API key to use AI features.</p>
+        <p><strong>Steps:</strong><br>
+        1. Go to <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com/settings/keys</a><br>
+        2. Sign up free (no credit card needed for free tier)<br>
+        3. Click <strong>Create Key</strong> and copy it<br>
+        4. Paste it in the <strong>"API Key"</strong> box above and click <strong>Save key</strong></p>
+        <p>Your key looks like: <code>sk-ant-api03-xxxx...</code></p>
+        <p style="color:#4ade80">Free tier gives ~$5 credit — enough for hundreds of outfit suggestions!</p>
+      </div>`;
+      aiEl.style.display='block';
+    }
+    return;
+  }
+
   try{
-    // Note: This will fail in a browser due to CORS and missing API key.
     const res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-3-5-sonnet-20240620',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})
     });
     const data = await res.json();
-    const text = data.content?.map(c=>c.text||'').join('')||'Could not get a response.';
+    if(data.error){
+      throw new Error(data.error.message||'API error');
+    }
+    const text = data.content?.map(c=>c.text||'').join('')||'No response received.';
     document.getElementById(spinId).style.display='none';
     document.getElementById(barId).style.display='none';
     if(aiEl){ aiEl.innerHTML=fmtMd(text); aiEl.style.display='block'; }
@@ -1024,16 +1125,17 @@ async function callAI(prompt, resultId, spinId, barId, fillId, actionsId){
     document.getElementById(spinId).style.display='none';
     document.getElementById(barId).style.display='none';
     if(aiEl){
-      aiEl.innerHTML=`
-        <div style="background: rgba(255, 107, 122, 0.1); border: 1px solid #ff6b7a; border-radius: var(--radius-sm); padding: 1rem; color: #ff6b7a; margin-top: 1rem;">
-          <h4 style="margin-bottom: 0.5rem;"><i class="ti ti-alert-triangle"></i> API Connection Failed</h4>
-          <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text);">To make this AI feature work, you need two things:</p>
-          <ul style="font-size: 0.8rem; line-height: 1.5; color: var(--text2); margin-left: 1.2rem; margin-top: 0.5rem;">
-            <li><strong>An API Key:</strong> A valid Anthropic Claude API key must be provided in the headers.</li>
-            <li><strong>A Backend Server:</strong> Direct browser requests are blocked by CORS. You must route this fetch request through a backend proxy (e.g., Node.js/Express).</li>
-          </ul>
-        </div>
-      `;
+      const msg = e.message||'';
+      const isAuth = msg.includes('auth') || msg.includes('401') || msg.includes('invalid');
+      aiEl.innerHTML=`<div class="api-err-box">
+        <h4><i class="ti ti-wifi-off"></i> ${isAuth?'Invalid API Key':'Connection error'}</h4>
+        <p>${isAuth
+          ? 'Your API key was rejected. Please check it is copied correctly from <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>.'
+          : 'Could not reach Anthropic servers. Please check your internet connection and try again.'
+        }</p>
+        ${!isAuth?'<p>If the problem persists, the Anthropic API may be temporarily down. Check <a href="https://status.anthropic.com" target="_blank">status.anthropic.com</a>.</p>':''}
+        <p style="color:var(--text3);font-size:.72rem">Error: ${msg||'Network failure'}</p>
+      </div>`;
       aiEl.style.display='block';
     }
   }
@@ -1043,16 +1145,7 @@ function runTryon(){
   const cats = state.selectedCats.length ? state.selectedCats.join(', ') : 'dress and accessories';
   const occ = document.getElementById('occasion').value||'casual';
   const clr = document.getElementById('color-pref').value||'any colour';
-  const prompt = `You are a professional fashion stylist specializing in Indian fashion. A ${state.gender} wants outfit suggestions for: ${occ}, colour preference: ${clr}. Match these items: ${cats}.
-
-Give:
-1. **Outfit concept** — 1-sentence vibe
-2. **Item recommendations** — for each of: ${cats}, give 2 India-market options with name, style, and INR price
-3. **Complete look** — how it ties together
-4. **Where to buy** — Myntra, Meesho, Ajio, Amazon India, etc.
-5. **Style tip** — one tip for a ${state.gender} in India
-
-Keep India-specific, practical, INR priced.`;
+  const prompt = `You are a professional fashion stylist specializing in Indian fashion. A ${state.gender} wants outfit suggestions for: ${occ}, colour preference: ${clr}. Match these items: ${cats}.\n\nGive:\n1. **Outfit concept** — 1-sentence vibe\n2. **Item recommendations** — for each of: ${cats}, give 2 India-market options with name, style, and INR price\n3. **Complete look** — how it ties together\n4. **Where to buy** — Myntra, Meesho, Ajio, Amazon India, etc.\n5. **Style tip** — one tip for a ${state.gender} in India\n\nKeep India-specific, practical, INR priced.`;
   state.triedCount++;
   document.getElementById('s-tried').textContent=state.triedCount;
   document.getElementById('stat-tried')&&(document.getElementById('stat-tried').textContent=state.triedCount);
@@ -1063,18 +1156,7 @@ function runDecor(){
   const w=document.getElementById('m-w').textContent, l=document.getElementById('m-l').textContent, h=document.getElementById('m-h').textContent;
   const dims = w!=='—'?`Room: ${w} wide × ${l} long × ${h} ceiling.`:'Room dimensions not yet calculated.';
   const style=document.getElementById('decor-style').value, budget=document.getElementById('decor-budget').value;
-  const prompt = `You are a professional Indian interior designer. Client wants to redecorate their ${state.roomType}. ${dims} Style: ${style}. Budget: ${budget}.
-
-Provide:
-1. **Room analysis** — spatial observations based on dimensions
-2. **Colour palette** — 3-4 paints with Asian Paints/Berger/Nerolac codes
-3. **Furniture** — 4-5 pieces with INR prices sized for the room
-4. **Lighting plan** — ceiling, ambient, task
-5. **Décor accents** — cushions, curtains, rugs, plants from Indian market
-6. **Vastu tip** — one Vastu Shastra suggestion for ${state.roomType}
-7. **Where to buy** — Urban Ladder, Pepperfry, Amazon India, IKEA India, etc.
-
-All prices in INR. Be specific to room size.`;
+  const prompt = `You are a professional Indian interior designer. Client wants to redecorate their ${state.roomType}. ${dims} Style: ${style}. Budget: ${budget}.\n\nProvide:\n1. **Room analysis** — spatial observations based on dimensions\n2. **Colour palette** — 3-4 paints with Asian Paints/Berger/Nerolac codes\n3. **Furniture** — 4-5 pieces with INR prices sized for the room\n4. **Lighting plan** — ceiling, ambient, task\n5. **Décor accents** — cushions, curtains, rugs, plants from Indian market\n6. **Vastu tip** — one Vastu Shastra suggestion for ${state.roomType}\n7. **Where to buy** — Urban Ladder, Pepperfry, Amazon India, IKEA India, etc.\n\nAll prices in INR. Be specific to room size.`;
   state.roomCount++;
   document.getElementById('s-rooms').textContent=state.roomCount;
   callAI(prompt,'decor-result','decor-spin','decor-bar','decor-fill','decor-actions');
@@ -1251,11 +1333,8 @@ function fmtMd(text){
   return text
     .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
     .replace(/^#{1,3}\s(.+)$/gm,'<p style="font-weight:600;color:var(--accent);margin:.6rem 0 .2rem;font-size:.85rem">$1</p>')
-    .replace(/
-
-/g,'</p><p style="margin:.2rem 0">')
-    .replace(/
-/g,'<br>')
+    .replace(/\n\n/g,'</p><p style="margin:.2rem 0">')
+    .replace(/\n/g,'<br>')
     .replace(/^/,'<p style="margin:.2rem 0">')
     .replace(/$/,'</p>');
 }

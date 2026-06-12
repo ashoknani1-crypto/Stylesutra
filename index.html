@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StyleSutra — Virtual Try-On & Home Décor</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+/* ─── TOKENS ───────────────────────────────────────── */
+:root {
+  --bg:       #1A0A2E;
+  --bg2:      #221040;
+  --bg3:      #2D1555;
+  --surface:  #38197A;
+  --surface2: #4A22A0;
+  --accent:   #C84B9E;
+  --accent2:  #F07B3A;
+  --gold:     #F5C842;
+  --teal:     #2DD4BF;
+  --text:     #F0EBF8;
+  --text2:    #B89FD4;
+  --text3:    #7A5FA0;
+  --border:   rgba(200,75,158,.22);
+  --border2:  rgba(200,75,158,.42);
+  --radius:   14px;
+  --radius-sm:8px;
+  --card:     rgba(56,25,122,.55);
+  --shadow:   0 8px 32px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+input,select,textarea,button{font-family:inherit;font-size:inherit}
+::placeholder{color:var(--text3)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px}
+
+/* ─── BACKGROUND MESH ─────────────────────────────── */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 10% 20%,rgba(200,75,158,.18) 0,transparent 70%),
+    radial-gradient(ellipse 50% 60% at 90% 80%,rgba(45,212,191,.12) 0,transparent 70%),
+    radial-gradient(ellipse 40% 40% at 50% 50%,rgba(240,123,58,.08) 0,transparent 60%);
+}
+
+/* ─── AUTH SCREEN ─────────────────────────────────── */
+#auth-screen{
+  position:fixed;inset:0;z-index:1000;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0D0520 0%,#1A0A2E 50%,#0D1F3C 100%);
+}
+.auth-box{
+  background:var(--card);backdrop-filter:blur(20px);
+  border:1px solid var(--border2);border-radius:24px;
+  padding:2.5rem 2rem;width:360px;max-width:calc(100vw - 2rem);
+  position:relative;z-index:1;box-shadow:var(--shadow);
+}
+.auth-logo{text-align:center;margin-bottom:1.75rem}
+.auth-logo .logo-icon{
+  width:64px;height:64px;border-radius:18px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:28px;color:#fff;margin-bottom:.75rem;
+}
+.auth-logo h1{font-size:1.6rem;font-weight:700;letter-spacing:-.02em}
+.auth-logo h1 span{color:var(--accent)}
+.auth-logo p{font-size:.8rem;color:var(--text2);margin-top:.25rem}
+.auth-tabs{display:flex;gap:4px;background:var(--bg2);border-radius:var(--radius-sm);padding:4px;margin-bottom:1.5rem}
+.auth-tab{flex:1;padding:.5rem;text-align:center;border-radius:6px;font-size:.8rem;font-weight:500;cursor:pointer;color:var(--text2);border:none;background:transparent;transition:all .2s}
+.auth-tab.active{background:var(--surface);color:var(--text)}
+.field{margin-bottom:.85rem}
+.field label{display:block;font-size:.75rem;color:var(--text2);margin-bottom:.3rem;font-weight:500}
+.field input{
+  width:100%;padding:.65rem .9rem;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:rgba(255,255,255,.05);
+  color:var(--text);outline:none;transition:border-color .2s;
+}
+.field input:focus{border-color:var(--accent)}
+.btn-auth{
+  width:100%;padding:.75rem;border-radius:var(--radius-sm);
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-weight:600;font-size:.9rem;border:none;cursor:pointer;
+  transition:opacity .2s;margin-top:.5rem;letter-spacing:.01em;
+}
+.btn-auth:hover{opacity:.9}
+.auth-divider{display:flex;align-items:center;gap:.75rem;margin:1rem 0;color:var(--text3);font-size:.75rem}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.social-logins{display:flex;gap:.5rem}
+.btn-social{
+  flex:1;padding:.55rem;border-radius:var(--radius-sm);border:1px solid var(--border);
+  background:rgba(255,255,255,.04);color:var(--text2);cursor:pointer;
+  font-size:.75rem;display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:all .2s;
+}
+.btn-social:hover{background:rgba(255,255,255,.08);border-color:var(--border2)}
+.auth-error{color:#ff6b7a;font-size:.75rem;margin-top:.4rem;display:none}
+
+/* ─── MAIN APP ────────────────────────────────────── */
+#app{display:none;min-height:100vh;position:relative;z-index:1}
+
+/* ─── TOP BAR ─────────────────────────────────────── */
+.topbar{
+  height:58px;background:rgba(26,10,46,.88);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 1.25rem;gap:.75rem;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-logo{font-size:1.1rem;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+.topbar-logo span{color:var(--accent)}
+.topbar-search{
+  flex:1;max-width:320px;position:relative;
+}
+.topbar-search input{
+  width:100%;padding:.45rem .75rem .45rem 2.2rem;
+  border-radius:20px;border:1px solid var(--border);
+  background:rgba(255,255,255,.06);color:var(--text);font-size:.82rem;outline:none;
+}
+.topbar-search input:focus{border-color:var(--border2)}
+.topbar-search i{position:absolute;left:.65rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:15px}
+.topbar-right{display:flex;align-items:center;gap:.5rem;margin-left:auto}
+.icon-btn{
+  width:36px;height:36px;border-radius:50%;border:1px solid var(--border);
+  background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;transition:all .2s;color:var(--text2);font-size:17px;
+}
+.icon-btn:hover{background:rgba(255,255,255,.1);border-color:var(--border2)}
+.badge-dot{
+  position:absolute;top:2px;right:2px;width:9px;height:9px;
+  border-radius:50%;background:var(--accent);border:2px solid var(--bg);
+}
+.avatar-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:700;cursor:pointer;border:2px solid var(--border2);
+  color:#fff;
+}
+
+/* ─── LAYOUT ──────────────────────────────────────── */
+.layout{display:flex;min-height:calc(100vh - 58px)}
+
+/* ─── LEFT SIDEBAR ───────────────────────────────── */
+.sidebar{
+  width:220px;flex-shrink:0;
+  background:rgba(26,10,46,.6);border-right:1px solid var(--border);
+  padding:1rem .75rem;display:flex;flex-direction:column;gap:.25rem;
+  position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;
+}
+.nav-item{
+  display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;
+  border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);
+  font-size:.85rem;font-weight:500;transition:all .2s;border:none;background:none;width:100%;
+}
+.nav-item:hover{background:rgba(200,75,158,.12);color:var(--text)}
+.nav-item.active{background:rgba(200,75,158,.2);color:var(--accent)}
+.nav-item i{font-size:18px;flex-shrink:0}
+.nav-section{font-size:.68rem;font-weight:600;color:var(--text3);padding:.75rem .75rem .25rem;letter-spacing:.07em;text-transform:uppercase}
+.sidebar-footer{margin-top:auto;padding-top:1rem;border-top:1px solid var(--border)}
+
+/* ─── MAIN CONTENT ────────────────────────────────── */
+.main{flex:1;padding:1.5rem;overflow-y:auto;min-width:0}
+
+/* ─── RIGHT PANEL ─────────────────────────────────── */
+.right-panel{
+  width:280px;flex-shrink:0;
+  background:rgba(26,10,46,.6);border-left:1px solid var(--border);
+  padding:1rem;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;
+}
+
+/* ─── CARDS ───────────────────────────────────────── */
+.card{
+  background:var(--card);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:1.25rem;
+}
+.card + .card{margin-top:1rem}
+.card-title{font-size:.78rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.card-title i{font-size:16px}
+
+/* ─── SECTION TABS ────────────────────────────────── */
+.section-tabs{display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap}
+.stab{
+  padding:.45rem 1rem;border-radius:20px;font-size:.82rem;font-weight:500;
+  border:1px solid var(--border);background:transparent;color:var(--text2);
+  cursor:pointer;transition:all .2s;
+}
+.stab:hover{border-color:var(--border2);color:var(--text)}
+.stab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+
+/* ─── UPLOAD ZONE ─────────────────────────────────── */
+.upload-zone{
+  border:2px dashed var(--border2);border-radius:var(--radius);
+  padding:1.75rem 1rem;text-align:center;cursor:pointer;transition:all .2s;
+  position:relative;overflow:hidden;
+}
+.upload-zone:hover{border-color:var(--accent);background:rgba(200,75,158,.05)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-zone i{font-size:36px;color:var(--accent);margin-bottom:.6rem;display:block}
+.upload-zone strong{font-size:.9rem;color:var(--text);display:block;margin-bottom:.3rem}
+.upload-zone p{font-size:.75rem;color:var(--text2);line-height:1.5}
+.preview-img{width:100%;border-radius:var(--radius-sm);display:none;object-fit:cover;max-height:260px;margin-top:.75rem}
+
+/* ─── BUTTONS ─────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:.4rem;
+  padding:.55rem 1rem;border-radius:var(--radius-sm);font-size:.82rem;font-weight:500;
+  border:1px solid var(--border);background:rgba(255,255,255,.06);
+  color:var(--text);cursor:pointer;transition:all .2s;
+}
+.btn:hover{background:rgba(255,255,255,.1);border-color:var(--border2)}
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-color:transparent;color:#fff;font-weight:600;
+}
+.btn-primary:hover{opacity:.9}
+.btn-teal{background:rgba(45,212,191,.15);border-color:rgba(45,212,191,.4);color:var(--teal)}
+.btn-sm{padding:.35rem .7rem;font-size:.75rem}
+.btn-full{width:100%;justify-content:center}
+.btn-icon{width:32px;height:32px;padding:0;border-radius:50%;justify-content:center}
+
+/* ─── FORM ELEMENTS ───────────────────────────────── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem}
+.form-group{margin-bottom:.75rem}
+.form-group label{display:block;font-size:.75rem;color:var(--text2);margin-bottom:.3rem;font-weight:500}
+.form-group input,.form-group select,.form-group textarea{
+  width:100%;padding:.55rem .8rem;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:rgba(255,255,255,.05);
+  color:var(--text);outline:none;transition:border-color .2s;
+}
+.form-group input:focus,.form-group select,.form-group select:focus,.form-group textarea:focus{
+  border-color:var(--border2);
+}
+.form-group select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23B89FD4' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center}
+.form-group option{background:#221040}
+
+/* ─── GENDER TOGGLE ───────────────────────────────── */
+.gender-toggle{display:flex;gap:.5rem;margin-bottom:.75rem}
+.gender-btn{
+  flex:1;padding:.5rem;border-radius:var(--radius-sm);border:1px solid var(--border);
+  background:rgba(255,255,255,.04);color:var(--text2);cursor:pointer;
+  font-size:.8rem;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;
+}
+.gender-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(200,75,158,.12)}
+
+/* ─── CATEGORY CHIPS ──────────────────────────────── */
+.chip-grid{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem}
+.chip{
+  padding:.3rem .7rem;border-radius:20px;font-size:.75rem;
+  border:1px solid var(--border);background:transparent;color:var(--text2);
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:.3rem;
+}
+.chip:hover,.chip.active{border-color:var(--accent);color:var(--accent);background:rgba(200,75,158,.12)}
+.chip i{font-size:14px}
+
+/* ─── RESULT AREA ─────────────────────────────────── */
+.result-area{
+  border:1px solid var(--border);border-radius:var(--radius);
+  min-height:200px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:1rem;overflow:hidden;
+}
+.result-empty{text-align:center;color:var(--text3)}
+.result-empty i{font-size:40px;margin-bottom:.5rem;display:block}
+.result-empty p{font-size:.8rem;line-height:1.5}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-text{font-size:.83rem;color:var(--text);line-height:1.75;width:100%}
+.ai-text strong{color:var(--accent);font-weight:600}
+.progress-bar{width:100%;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;display:none;margin-top:.5rem}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:2px;width:0;transition:width .4s}
+
+/* ─── MEASURE CARDS ───────────────────────────────── */
+.measure-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.75rem}
+.measure-card{background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.2);border-radius:var(--radius-sm);padding:.6rem .75rem;text-align:center}
+.measure-card label{font-size:.68rem;color:var(--teal);display:block;margin-bottom:2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.measure-card span{font-size:1.1rem;font-weight:700;color:var(--text)}
+
+/* ─── ACTION ROW ──────────────────────────────────── */
+.action-row{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.75rem}
+
+/* ─── SHARE MODAL ─────────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:20px;
+  padding:1.75rem;width:400px;max-width:calc(100vw - 2rem);
+  box-shadow:var(--shadow);position:relative;
+}
+.modal h3{font-size:1.05rem;font-weight:600;margin-bottom:.3rem}
+.modal p{font-size:.8rem;color:var(--text2);margin-bottom:1.25rem}
+.modal-close{position:absolute;top:.9rem;right:.9rem;background:none;border:none;color:var(--text2);cursor:pointer;font-size:20px}
+.share-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1.25rem}
+.share-btn{
+  display:flex;flex-direction:column;align-items:center;gap:.4rem;
+  padding:.75rem .5rem;border-radius:var(--radius-sm);border:1px solid var(--border);
+  background:rgba(255,255,255,.04);cursor:pointer;transition:all .2s;
+  font-size:.7rem;color:var(--text2);
+}
+.share-btn:hover{background:rgba(255,255,255,.08);border-color:var(--border2);color:var(--text)}
+.share-btn i{font-size:22px}
+.share-btn.whatsapp i{color:#25D366}
+.share-btn.instagram i{color:#E1306C}
+.share-btn.twitter i{color:#1DA1F2}
+.share-btn.pinterest i{color:#E60023}
+.share-btn.email i{color:var(--gold)}
+.share-btn.link i{color:var(--teal)}
+.share-btn.download i{color:var(--accent)}
+.share-btn.more i{color:var(--text3)}
+.copy-link-row{display:flex;gap:.5rem}
+.copy-link-row input{flex:1;padding:.5rem .75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text2);font-size:.78rem;outline:none}
+
+/* ─── CHAT PANEL ──────────────────────────────────── */
+#chat-screen{display:none}
+.chat-layout{display:flex;gap:1rem}
+.chat-list{width:280px;flex-shrink:0}
+.chat-list-item{
+  display:flex;align-items:center;gap:.75rem;padding:.75rem;
+  border-radius:var(--radius-sm);cursor:pointer;transition:all .2s;
+  border:1px solid transparent;
+}
+.chat-list-item:hover{background:rgba(200,75,158,.08);border-color:var(--border)}
+.chat-list-item.active{background:rgba(200,75,158,.15);border-color:var(--border2)}
+.chat-avatar{
+  width:40px;height:40px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;
+}
+.chat-info{flex:1;min-width:0}
+.chat-info h4{font-size:.85rem;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-info p{font-size:.75rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.chat-time{font-size:.68rem;color:var(--text3)}
+.unread-badge{background:var(--accent);color:#fff;font-size:.65rem;font-weight:700;border-radius:10px;padding:1px 6px;min-width:18px;text-align:center}
+.chat-window{flex:1;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;min-height:480px}
+.chat-header{display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;border-bottom:1px solid var(--border);background:rgba(0,0,0,.2)}
+.chat-header h3{font-size:.9rem;font-weight:600;flex:1}
+.chat-header p{font-size:.72rem;color:var(--teal)}
+.chat-messages{flex:1;padding:1rem;overflow-y:auto;display:flex;flex-direction:column;gap:.75rem}
+.msg{max-width:72%;display:flex;flex-direction:column;gap:3px}
+.msg.mine{align-self:flex-end;align-items:flex-end}
+.msg.theirs{align-self:flex-start;align-items:flex-start}
+.msg-bubble{padding:.55rem .85rem;border-radius:14px;font-size:.82rem;line-height:1.5}
+.msg.mine .msg-bubble{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-bottom-right-radius:4px}
+.msg.theirs .msg-bubble{background:var(--bg3);color:var(--text);border-bottom-left-radius:4px}
+.msg-time{font-size:.65rem;color:var(--text3)}
+.chat-input-row{display:flex;gap:.5rem;padding:.75rem 1rem;border-top:1px solid var(--border);background:rgba(0,0,0,.2)}
+.chat-input-row input{flex:1;padding:.55rem .85rem;border-radius:20px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);outline:none;font-size:.83rem}
+.chat-input-row input:focus{border-color:var(--border2)}
+
+/* ─── FRIENDS PANEL ───────────────────────────────── */
+#friends-screen{display:none}
+.friends-search{position:relative;margin-bottom:1rem}
+.friends-search input{width:100%;padding:.55rem .85rem .55rem 2.2rem;border-radius:20px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);outline:none;font-size:.83rem}
+.friends-search i{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px}
+.friend-card{display:flex;align-items:center;gap:.75rem;padding:.75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,.03);margin-bottom:.5rem;transition:all .2s}
+.friend-card:hover{background:rgba(200,75,158,.07);border-color:var(--border2)}
+.friend-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;flex-shrink:0}
+.friend-info{flex:1;min-width:0}
+.friend-info h4{font-size:.85rem;font-weight:500;margin-bottom:2px}
+.friend-info p{font-size:.72rem;color:var(--text2)}
+.online-dot{width:9px;height:9px;border-radius:50%;background:#22c55e;border:2px solid var(--bg2);display:inline-block;margin-right:4px}
+.friend-actions{display:flex;gap:.35rem}
+.request-card{display:flex;align-items:center;gap:.75rem;padding:.75rem;border-radius:var(--radius-sm);border:1px solid rgba(245,200,66,.2);background:rgba(245,200,66,.05);margin-bottom:.5rem}
+
+/* ─── STYLE PROFILE ───────────────────────────────── */
+.style-chip-grid{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.75rem}
+.style-chip{border:1px solid var(--border);border-radius:var(--radius-sm);padding:.5rem;cursor:pointer;font-size:.78rem;text-align:center;color:var(--text2);transition:all .2s}
+.style-chip:hover,.style-chip.active{border-color:var(--teal);color:var(--teal);background:rgba(45,212,191,.07)}
+.brand-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem}
+.brand-tag{font-size:.72rem;padding:.25rem .65rem;border-radius:20px;border:1px solid var(--border);cursor:pointer;color:var(--text2);transition:all .2s}
+.brand-tag.active{background:rgba(200,75,158,.15);color:var(--accent);border-color:var(--border2)}
+
+/* ─── NOTIFICATIONS ───────────────────────────────── */
+.notif{display:flex;gap:.75rem;padding:.75rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,.03);margin-bottom:.5rem;align-items:flex-start}
+.notif i{font-size:18px;flex-shrink:0;margin-top:2px}
+.notif-text{flex:1}
+.notif-text p{font-size:.8rem;line-height:1.5;margin-bottom:2px}
+.notif-text span{font-size:.7rem;color:var(--text3)}
+
+/* ─── TABS in right panel ─────────────────────────── */
+.rp-tabs{display:flex;gap:4px;background:var(--bg2);border-radius:var(--radius-sm);padding:3px;margin-bottom:1rem}
+.rp-tab{flex:1;padding:.35rem;text-align:center;border-radius:5px;font-size:.72rem;font-weight:500;cursor:pointer;color:var(--text2);border:none;background:transparent;transition:all .2s}
+.rp-tab.active{background:var(--surface);color:var(--text)}
+
+/* ─── FEED ────────────────────────────────────────── */
+.feed-post{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1rem;background:var(--card)}
+.feed-post-header{display:flex;align-items:center;gap:.6rem;padding:.85rem 1rem}
+.feed-post-header h4{font-size:.82rem;font-weight:500}
+.feed-post-header span{font-size:.72rem;color:var(--text2)}
+.feed-post-img{width:100%;height:180px;object-fit:cover;background:linear-gradient(135deg,var(--bg3),var(--surface));display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:.82rem}
+.feed-post-footer{padding:.75rem 1rem;display:flex;align-items:center;gap:.5rem}
+.feed-post-footer .btn-sm{margin-right:auto}
+
+/* ─── TOAST ───────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);
+  padding:.65rem 1rem;font-size:.82rem;display:flex;align-items:center;gap:.5rem;
+  box-shadow:var(--shadow);transform:translateY(120%);transition:transform .3s;
+}
+.toast.show{transform:translateY(0)}
+.toast i{color:var(--teal)}
+
+/* ─── RESPONSIVE ──────────────────────────────────── */
+@media(max-width:900px){
+  .sidebar{width:52px;padding:.75rem .25rem}
+  .nav-item span,.nav-section{display:none}
+  .nav-item{justify-content:center;padding:.6rem}
+  .right-panel{display:none}
+}
+@media(max-width:620px){
+  .main{padding:1rem .75rem}
+  .form-row{grid-template-columns:1fr}
+  .chat-layout{flex-direction:column}
+  .chat-list{width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ AUTH SCREEN ═══════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="logo-icon"><i class="ti ti-wand"></i></div>
+      <h1>Style<span>Sutra</span></h1>
+      <p>Virtual Try-On · Home Décor · AI Styling</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="showAuthTab('login')">Sign in</button>
+      <button class="auth-tab" onclick="showAuthTab('signup')">Create account</button>
+    </div>
+    <!-- LOGIN -->
+    <div id="login-form">
+      <div class="field"><label>Email or username</label><input type="email" id="login-email" placeholder="you@email.com" value="demo@stylesutra.in"></div>
+      <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••" value="demo123"></div>
+      <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--text2);margin-bottom:.5rem">
+        <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer"><input type="checkbox" checked> Remember me</label>
+        <a href="#" style="color:var(--accent)">Forgot password?</a>
+      </div>
+      <div class="auth-error" id="login-error">Incorrect email or password. Try demo@stylesutra.in / demo123</div>
+      <button class="btn-auth" onclick="doLogin()">Sign in</button>
+    </div>
+    <!-- SIGNUP -->
+    <div id="signup-form" style="display:none">
+      <div class="form-row" style="margin-bottom:.85rem">
+        <div class="field" style="margin:0"><label>First name</label><input type="text" placeholder="Priya"></div>
+        <div class="field" style="margin:0"><label>Last name</label><input type="text" placeholder="Sharma"></div>
+      </div>
+      <div class="field"><label>Email</label><input type="email" placeholder="you@email.com"></div>
+      <div class="field"><label>Username</label><input type="text" placeholder="@priya_styles"></div>
+      <div class="field"><label>Password</label><input type="password" placeholder="min. 8 characters"></div>
+      <button class="btn-auth" onclick="doLogin()">Create account — it's free</button>
+    </div>
+    <div class="auth-divider">or continue with</div>
+    <div class="social-logins">
+      <button class="btn-social" onclick="doLogin()"><i class="ti ti-brand-google"></i> Google</button>
+      <button class="btn-social" onclick="doLogin()"><i class="ti ti-brand-facebook"></i> Facebook</button>
+      <button class="btn-social" onclick="doLogin()"><i class="ti ti-brand-apple"></i> Apple</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MAIN APP ═══════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-logo">Style<span>Sutra</span></div>
+    <div class="topbar-search">
+      <i class="ti ti-search"></i>
+      <input type="text" placeholder="Search styles, rooms, friends…">
+    </div>
+    <div class="topbar-right">
+      <div class="icon-btn" onclick="showSection('friends')"><i class="ti ti-users"></i><div class="badge-dot"></div></div>
+      <div class="icon-btn" onclick="showSection('chat')"><i class="ti ti-message-2"></i><div class="badge-dot"></div></div>
+      <div class="icon-btn" onclick="showRPTab('notif')"><i class="ti ti-bell"></i></div>
+      <div class="avatar-btn" id="user-avatar" onclick="showSection('profile')">AS</div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- LEFT SIDEBAR -->
+    <nav class="sidebar">
+      <button class="nav-item active" onclick="showSection('tryon')"><i class="ti ti-shirt"></i><span>Try-On</span></button>
+      <button class="nav-item" onclick="showSection('decor')"><i class="ti ti-home"></i><span>Home Décor</span></button>
+      <button class="nav-item" onclick="showSection('feed')"><i class="ti ti-layout-grid"></i><span>Explore feed</span></button>
+      <div class="nav-section">Social</div>
+      <button class="nav-item" onclick="showSection('chat')"><i class="ti ti-message-2"></i><span>Messages</span></button>
+      <button class="nav-item" onclick="showSection('friends')"><i class="ti ti-users"></i><span>Friends</span></button>
+      <div class="nav-section">You</div>
+      <button class="nav-item" onclick="showSection('profile')"><i class="ti ti-wand"></i><span>Style profile</span></button>
+      <button class="nav-item" onclick="showSection('saved')"><i class="ti ti-bookmark"></i><span>Saved looks</span></button>
+      <div class="sidebar-footer">
+        <button class="nav-item" onclick="doLogout()"><i class="ti ti-logout"></i><span>Sign out</span></button>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+      <!-- ── TRY-ON ────────────────────────────────── -->
+      <div id="screen-tryon">
+        <div class="section-tabs">
+          <button class="stab active" onclick="setSTab(this,'tryon-main')">Virtual try-on</button>
+          <button class="stab" onclick="setSTab(this,'tryon-history')">My looks</button>
+        </div>
+        <div id="tryon-main">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <!-- LEFT -->
+            <div>
+              <div class="card">
+                <div class="card-title"><i class="ti ti-camera"></i>Your photo</div>
+                <div class="gender-toggle">
+                  <button class="gender-btn active" onclick="setGender(this,'woman')"><i class="ti ti-woman"></i> Woman</button>
+                  <button class="gender-btn" onclick="setGender(this,'man')"><i class="ti ti-man"></i> Man</button>
+                </div>
+                <div class="upload-zone" onclick="document.getElementById('photo-file').click()">
+                  <input type="file" id="photo-file" accept="image/*" onchange="handlePhoto(this)">
+                  <i class="ti ti-upload"></i>
+                  <strong>Upload full-body photo</strong>
+                  <p>Front-facing, clear background · JPEG or PNG</p>
+                </div>
+                <img id="photo-preview" class="preview-img" alt="Your photo">
+              </div>
+              <div class="card" style="margin-top:1rem">
+                <div class="card-title"><i class="ti ti-adjustments"></i>What to match</div>
+                <div class="chip-grid" id="category-chips">
+                  <div class="chip active" onclick="toggleChip(this,'Dress')"><i class="ti ti-shirt"></i>Dress</div>
+                  <div class="chip" onclick="toggleChip(this,'Sunglasses')"><i class="ti ti-sunglasses"></i>Goggles</div>
+                  <div class="chip" onclick="toggleChip(this,'Shoes')"><i class="ti ti-run"></i>Shoes</div>
+                  <div class="chip" onclick="toggleChip(this,'Bag')"><i class="ti ti-backpack"></i>Bag</div>
+                  <div class="chip" onclick="toggleChip(this,'Watch')"><i class="ti ti-device-watch"></i>Watch</div>
+                  <div class="chip" onclick="toggleChip(this,'Jewellery')"><i class="ti ti-diamond"></i>Jewellery</div>
+                  <div class="chip" onclick="toggleChip(this,'Hat/Dupatta')"><i class="ti ti-baseball"></i>Hat/Dupatta</div>
+                  <div class="chip" onclick="toggleChip(this,'Makeup tone')"><i class="ti ti-sparkles"></i>Makeup tone</div>
+                </div>
+                <div class="form-group">
+                  <label>Occasion</label>
+                  <select id="occasion">
+                    <option value="">Choose occasion...</option>
+                    <option>Casual daily</option>
+                    <option>Office / formal</option>
+                    <option>Wedding / reception</option>
+                    <option>Beach / vacation</option>
+                    <option>Gym / sports</option>
+                    <option>Evening party</option>
+                    <option>Puja / festival</option>
+                    <option>College / campus</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Colour preference</label>
+                  <select id="color-pref">
+                    <option value="">Any colour</option>
+                    <option>Pastels / soft tones</option>
+                    <option>Bold / vibrant</option>
+                    <option>Earthy / neutral</option>
+                    <option>Monochrome / black-white</option>
+                    <option>Traditional (red, gold, green)</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary btn-full" onclick="runTryon()"><i class="ti ti-wand"></i> Generate outfit suggestions</button>
+              </div>
+            </div>
+            <!-- RIGHT RESULT -->
+            <div>
+              <div class="card" style="height:100%">
+                <div class="card-title" style="justify-content:space-between">
+                  <span><i class="ti ti-sparkles"></i>AI Outfit Result</span>
+                  <button class="btn btn-sm btn-teal" onclick="openShare()" id="share-btn" style="display:none"><i class="ti ti-share"></i> Share</button>
+                </div>
+                <div class="result-area" id="tryon-result">
+                  <div class="result-empty" id="tryon-empty"><i class="ti ti-shirt"></i><p>Upload your photo and tap generate</p></div>
+                  <div class="spinner" id="tryon-spin"></div>
+                  <div class="ai-text" id="tryon-ai" style="display:none"></div>
+                </div>
+                <div class="progress-bar" id="tryon-bar"><div class="progress-fill" id="tryon-fill"></div></div>
+                <div class="action-row" id="tryon-actions" style="display:none">
+                  <button class="btn btn-sm" onclick="runTryon()"><i class="ti ti-refresh"></i> Redo</button>
+                  <button class="btn btn-sm" onclick="askAI('Give same outfit in different colour palette')"><i class="ti ti-palette"></i> New colours</button>
+                  <button class="btn btn-sm" onclick="askAI('What accessories match this outfit for Indian women?')"><i class="ti ti-diamond"></i> Match accessories</button>
+                  <button class="btn btn-sm" onclick="askAI('Where to buy this outfit in India under ₹2000 on Myntra or Meesho?')"><i class="ti ti-shopping-cart"></i> Shop India</button>
+                  <button class="btn btn-sm" onclick="saveToFeed()"><i class="ti ti-bookmark"></i> Save look</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="tryon-history" style="display:none">
+          <div class="card">
+            <div class="card-title"><i class="ti ti-bookmark"></i>Saved looks</div>
+            <p style="font-size:.82rem;color:var(--text2);text-align:center;padding:2rem 0">Your saved outfits will appear here after you generate and save them.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── HOME DÉCOR ──────────────────────────────── -->
+      <div id="screen-decor" style="display:none">
+        <div class="section-tabs">
+          <button class="stab active" onclick="setSTab(this,'decor-main')">Room analyzer</button>
+          <button class="stab" onclick="setSTab(this,'decor-saved')">Saved rooms</button>
+        </div>
+        <div id="decor-main">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+            <div>
+              <div class="card">
+                <div class="card-title"><i class="ti ti-photo"></i>Room photo</div>
+                <div class="upload-zone" onclick="document.getElementById('room-file').click()">
+                  <input type="file" id="room-file" accept="image/*" onchange="handleRoom(this)">
+                  <i class="ti ti-home"></i>
+                  <strong>Upload room photo</strong>
+                  <p>Wide-angle showing two walls and floor gives the best dimension estimates.</p>
+                </div>
+                <img id="room-preview" class="preview-img" alt="Room photo">
+                <div id="room-measures" style="display:none">
+                  <p style="font-size:.72rem;color:var(--text2);margin:.75rem 0 .35rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em">AI-estimated dimensions</p>
+                  <div class="measure-grid">
+                    <div class="measure-card"><label>Width</label><span id="m-w">—</span></div>
+                    <div class="measure-card"><label>Length</label><span id="m-l">—</span></div>
+                    <div class="measure-card"><label>Ceiling ht.</label><span id="m-h">—</span></div>
+                    <div class="measure-card"><label>Floor area</label><span id="m-a">—</span></div>
+                  </div>
+                  <p style="font-size:.68rem;color:var(--text3);margin-top:.4rem"><i class="ti ti-info-circle"></i> Estimates based on standard proportions. Verify with a tape for precision.</p>
+                </div>
+              </div>
+              <div class="card" style="margin-top:1rem">
+                <div class="card-title"><i class="ti ti-adjustments"></i>Preferences</div>
+                <div class="chip-grid" style="margin-bottom:.75rem">
+                  <div class="chip active" onclick="setRoomType(this,'Living room')">Living room</div>
+                  <div class="chip" onclick="setRoomType(this,'Bedroom')">Bedroom</div>
+                  <div class="chip" onclick="setRoomType(this,'Kitchen')">Kitchen</div>
+                  <div class="chip" onclick="setRoomType(this,'Home office')">Office</div>
+                  <div class="chip" onclick="setRoomType(this,'Pooja room')">Pooja room</div>
+                  <div class="chip" onclick="setRoomType(this,'Kid\'s room')">Kid's room</div>
+                </div>
+                <div class="form-group">
+                  <label>Décor style</label>
+                  <select id="decor-style">
+                    <option>Modern minimalist</option>
+                    <option>Traditional Indian</option>
+                    <option>Scandinavian</option>
+                    <option>Bohemian</option>
+                    <option>Industrial</option>
+                    <option>Coastal / tropical</option>
+                    <option>Royal / opulent</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Budget range</label>
+                  <select id="decor-budget">
+                    <option>Under ₹10,000</option>
+                    <option>₹10,000 – ₹50,000</option>
+                    <option>₹50,000 – ₹2,00,000</option>
+                    <option>₹2,00,000+</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary btn-full" onclick="runDecor()"><i class="ti ti-wand"></i> Analyze room & suggest décor</button>
+              </div>
+            </div>
+            <div>
+              <div class="card" style="height:100%">
+                <div class="card-title" style="justify-content:space-between">
+                  <span><i class="ti ti-bulb"></i>Décor recommendations</span>
+                  <button class="btn btn-sm btn-teal" onclick="openShare()" id="share-decor-btn" style="display:none"><i class="ti ti-share"></i> Share</button>
+                </div>
+                <div class="result-area" id="decor-result">
+                  <div class="result-empty" id="decor-empty"><i class="ti ti-home"></i><p>Upload your room photo to get personalized suggestions</p></div>
+                  <div class="spinner" id="decor-spin"></div>
+                  <div class="ai-text" id="decor-ai" style="display:none"></div>
+                </div>
+                <div class="progress-bar" id="decor-bar"><div class="progress-fill" id="decor-fill"></div></div>
+                <div class="action-row" id="decor-actions" style="display:none">
+                  <button class="btn btn-sm" onclick="runDecor()"><i class="ti ti-refresh"></i> Redo</button>
+                  <button class="btn btn-sm" onclick="askAI('Give me a Vastu Shastra layout plan for this room')"><i class="ti ti-sun"></i> Vastu plan</button>
+                  <button class="btn btn-sm" onclick="askAI('Find furniture matching these recommendations on Amazon India')"><i class="ti ti-shopping-cart"></i> Shop furniture</button>
+                  <button class="btn btn-sm" onclick="askAI('Suggest paint colours from Asian Paints for this room style')"><i class="ti ti-palette"></i> Paint colours</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="decor-saved" style="display:none">
+          <div class="card"><div class="card-title"><i class="ti ti-bookmark"></i>Saved rooms</div><p style="font-size:.82rem;color:var(--text2);text-align:center;padding:2rem 0">Your saved room analyses will appear here.</p></div>
+        </div>
+      </div>
+
+      <!-- ── EXPLORE FEED ─────────────────────────────── -->
+      <div id="screen-feed" style="display:none">
+        <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1.25rem">Explore feed</h2>
+        <div id="feed-posts"></div>
+      </div>
+
+      <!-- ── CHAT ──────────────────────────────────────── -->
+      <div id="screen-chat" style="display:none">
+        <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1.25rem">Messages</h2>
+        <div class="chat-layout">
+          <div class="chat-list card" style="padding:.75rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+              <span style="font-size:.8rem;font-weight:600;color:var(--text2)">CONVERSATIONS</span>
+              <button class="btn btn-sm" onclick="startNewChat()"><i class="ti ti-plus"></i> New</button>
+            </div>
+            <div id="chat-list-items"></div>
+          </div>
+          <div class="chat-window" id="chat-window">
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:.82rem">Select a conversation to start chatting</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FRIENDS ───────────────────────────────────── -->
+      <div id="screen-friends" style="display:none">
+        <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1.25rem">Friends & community</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div>
+            <div class="card">
+              <div class="card-title"><i class="ti ti-user-plus"></i>Add friends</div>
+              <div class="friends-search"><i class="ti ti-search"></i><input type="text" placeholder="Search by name or @username" oninput="searchFriends(this.value)"></div>
+              <div id="friend-search-results"></div>
+              <div class="card-title" style="margin-top:.75rem"><i class="ti ti-clock"></i>Friend requests</div>
+              <div id="friend-requests"></div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div class="card-title"><i class="ti ti-users"></i>My friends <span style="font-size:.7rem;background:var(--surface);padding:1px 8px;border-radius:10px;margin-left:auto" id="friends-count">0</span></div>
+              <div id="my-friends"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STYLE PROFILE ─────────────────────────────── -->
+      <div id="screen-profile" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="card">
+            <div class="card-title"><i class="ti ti-user"></i>My profile</div>
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem">
+              <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;color:#fff;flex-shrink:0" id="profile-avatar">AS</div>
+              <div>
+                <h3 style="font-size:1rem;font-weight:600" id="profile-name">Ashok S.</h3>
+                <p style="font-size:.78rem;color:var(--text2)">@ashok_styles · Mumbai, India</p>
+                <div style="display:flex;gap:.5rem;margin-top:.4rem">
+                  <span style="font-size:.7rem;background:rgba(200,75,158,.15);color:var(--accent);padding:2px 8px;border-radius:10px">Style enthusiast</span>
+                  <span style="font-size:.7rem;background:rgba(45,212,191,.1);color:var(--teal);padding:2px 8px;border-radius:10px">AIDesignSutra</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-title"><i class="ti ti-heart"></i>Style preferences</div>
+            <div class="style-chip-grid">
+              <div class="style-chip active" onclick="this.classList.toggle('active')">Casual &amp; comfy</div>
+              <div class="style-chip" onclick="this.classList.toggle('active')">Office professional</div>
+              <div class="style-chip active" onclick="this.classList.toggle('active')">Ethnic / traditional</div>
+              <div class="style-chip" onclick="this.classList.toggle('active')">Western fusion</div>
+              <div class="style-chip" onclick="this.classList.toggle('active')">Streetwear</div>
+              <div class="style-chip" onclick="this.classList.toggle('active')">Minimalist</div>
+            </div>
+            <div class="card-title" style="margin-top:.25rem"><i class="ti ti-tag"></i>Favourite brands</div>
+            <div class="brand-tags">
+              <span class="brand-tag active" onclick="this.classList.toggle('active')">Fabindia</span>
+              <span class="brand-tag" onclick="this.classList.toggle('active')">Manyavar</span>
+              <span class="brand-tag active" onclick="this.classList.toggle('active')">H&amp;M</span>
+              <span class="brand-tag" onclick="this.classList.toggle('active')">Zara</span>
+              <span class="brand-tag" onclick="this.classList.toggle('active')">Biba</span>
+              <span class="brand-tag" onclick="this.classList.toggle('active')">Van Heusen</span>
+              <span class="brand-tag" onclick="this.classList.toggle('active')">Nike</span>
+              <span class="brand-tag" onclick="this.classList.toggle('active')">Adidas</span>
+              <span class="brand-tag" onclick="this.classList.toggle('active')">Meesho labels</span>
+            </div>
+            <div class="form-row" style="margin-top:.75rem">
+              <div class="form-group" style="margin:0"><label>Budget per outfit</label><select><option>Under ₹500</option><option>₹500–₹2,000</option><option selected>₹2,000–₹5,000</option><option>₹5,000+</option></select></div>
+              <div class="form-group" style="margin:0"><label>Climate / region</label><select><option selected>Coastal (Mumbai)</option><option>North Indian plains</option><option>Hilly / cold</option><option>Tropical South</option></select></div>
+            </div>
+            <button class="btn btn-primary btn-full" style="margin-top:1rem" onclick="askAI('Based on my style profile — casual, ethnic, H&M and Fabindia, Mumbai coastal climate, ₹2000-5000 budget — give me a personalised 7-day outfit plan for an Indian professional')"><i class="ti ti-calendar"></i> Generate weekly outfit plan</button>
+          </div>
+          <div>
+            <div class="card">
+              <div class="card-title"><i class="ti ti-chart-bar"></i>Style stats</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem">
+                <div class="measure-card"><label>Outfits tried</label><span id="s-tried">0</span></div>
+                <div class="measure-card"><label>Looks saved</label><span id="s-saved">0</span></div>
+                <div class="measure-card"><label>Rooms styled</label><span id="s-rooms">0</span></div>
+                <div class="measure-card"><label>Friends</label><span id="s-friends">3</span></div>
+              </div>
+              <div class="card-title"><i class="ti ti-bolt"></i>Quick actions</div>
+              <div style="display:flex;flex-direction:column;gap:.4rem">
+                <button class="btn btn-full" style="justify-content:flex-start" onclick="askAI('What are trending fashion styles in India right now in 2025?')"><i class="ti ti-trending-up"></i> Trending in India</button>
+                <button class="btn btn-full" style="justify-content:flex-start" onclick="askAI('Suggest a complete ethnic wedding outfit for an Indian man under ₹5000')"><i class="ti ti-diamond"></i> Wedding outfit ideas</button>
+                <button class="btn btn-full" style="justify-content:flex-start" onclick="askAI('How do I decorate a 10x12 ft bedroom in Indian style on a ₹20,000 budget?')"><i class="ti ti-home"></i> Bedroom on a budget</button>
+                <button class="btn btn-full" style="justify-content:flex-start" onclick="askAI('What capsule wardrobe should every Indian professional woman own?')"><i class="ti ti-shirt"></i> Capsule wardrobe guide</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SAVED ──────────────────────────────────────── -->
+      <div id="screen-saved" style="display:none">
+        <div class="card"><div class="card-title"><i class="ti ti-bookmark"></i>Saved looks & rooms</div><p style="font-size:.82rem;color:var(--text2);text-align:center;padding:2rem 0">Save an outfit or room analysis to see it here.</p></div>
+      </div>
+
+    </main><!-- /main -->
+
+    <!-- RIGHT PANEL -->
+    <aside class="right-panel">
+      <div class="rp-tabs">
+        <button class="rp-tab active" onclick="showRPTab('notif')">Notifications</button>
+        <button class="rp-tab" onclick="showRPTab('trending')">Trending</button>
+      </div>
+      <div id="rp-notif">
+        <div class="notif"><i class="ti ti-user-plus" style="color:var(--accent)"></i><div class="notif-text"><p><strong>Priya Mehta</strong> sent you a friend request</p><span>2 min ago</span></div></div>
+        <div class="notif"><i class="ti ti-heart" style="color:var(--gold)"></i><div class="notif-text"><p><strong>Rohan K.</strong> liked your saved look</p><span>15 min ago</span></div></div>
+        <div class="notif"><i class="ti ti-message-2" style="color:var(--teal)"></i><div class="notif-text"><p><strong>Anika S.</strong> replied to your outfit post</p><span>1 hr ago</span></div></div>
+        <div class="notif"><i class="ti ti-sparkles" style="color:var(--accent2)"></i><div class="notif-text"><p>New summer collection trends available</p><span>3 hr ago</span></div></div>
+      </div>
+      <div id="rp-trending" style="display:none">
+        <div style="font-size:.75rem;font-weight:600;color:var(--text2);margin-bottom:.6rem">TRENDING NOW 🔥</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          <div class="chip" style="cursor:pointer" onclick="askAI('Tell me about the #KurtaSet trend in India')"><i class="ti ti-trending-up"></i>#KurtaSet</div>
+          <div class="chip" onclick="askAI('What is the Indo-Western fusion trend?')"><i class="ti ti-trending-up"></i>#IndoWestern</div>
+          <div class="chip" onclick="askAI('What are Vastu-compliant paint colours for 2025?')"><i class="ti ti-trending-up"></i>#VastuDecor</div>
+          <div class="chip" onclick="askAI('What is minimalist bedroom décor trend in India?')"><i class="ti ti-trending-up"></i>#MinimalistHome</div>
+          <div class="chip" onclick="askAI('What is the streetwear trend in Indian fashion?')"><i class="ti ti-trending-up"></i>#DesiStreetWear</div>
+        </div>
+        <div style="font-size:.75rem;font-weight:600;color:var(--text2);margin:1rem 0 .6rem">POPULAR LOOKS</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          <div style="font-size:.78rem;color:var(--text2);padding:.4rem 0;border-bottom:1px solid var(--border)">Saree + blazer fusion · 2.4k saves</div>
+          <div style="font-size:.78rem;color:var(--text2);padding:.4rem 0;border-bottom:1px solid var(--border)">Boho living room · 1.8k saves</div>
+          <div style="font-size:.78rem;color:var(--text2);padding:.4rem 0">Ethnic office wear · 3.1k saves</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div><!-- /app -->
+
+<!-- ═══ SHARE MODAL ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeShare()"><i class="ti ti-x"></i></button>
+    <h3>Share this look</h3>
+    <p>Show off your style or get feedback from friends</p>
+    <div class="share-grid">
+      <div class="share-btn whatsapp" onclick="shareAction('WhatsApp')"><i class="ti ti-brand-whatsapp"></i><span>WhatsApp</span></div>
+      <div class="share-btn instagram" onclick="shareAction('Instagram')"><i class="ti ti-brand-instagram"></i><span>Instagram</span></div>
+      <div class="share-btn twitter" onclick="shareAction('X/Twitter')"><i class="ti ti-brand-twitter"></i><span>X/Twitter</span></div>
+      <div class="share-btn pinterest" onclick="shareAction('Pinterest')"><i class="ti ti-brand-pinterest"></i><span>Pinterest</span></div>
+      <div class="share-btn email" onclick="shareAction('Email')"><i class="ti ti-mail"></i><span>Email</span></div>
+      <div class="share-btn link" onclick="copyLink()"><i class="ti ti-link"></i><span>Copy link</span></div>
+      <div class="share-btn download" onclick="shareAction('Download')"><i class="ti ti-download"></i><span>Download</span></div>
+      <div class="share-btn more" onclick="shareAction('More')"><i class="ti ti-dots"></i><span>More</span></div>
+    </div>
+    <div class="copy-link-row">
+      <input type="text" value="https://stylesutra.in/look/a8f3k2" readonly id="share-link">
+      <button class="btn btn-teal btn-sm" onclick="copyLink()"><i class="ti ti-copy"></i> Copy</button>
+    </div>
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+      <p style="font-size:.78rem;color:var(--text2);margin-bottom:.5rem">Share with friends</p>
+      <div id="share-friends-row" style="display:flex;gap:.4rem;flex-wrap:wrap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="ti ti-check"></i><span id="toast-msg">Done!</span></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────
+const state = {
+  user: null,
+  gender: 'woman',
+  selectedCats: ['Dress'],
+  roomType: 'Living room',
+  triedCount: 0,
+  roomCount: 0,
+  savedCount: 0,
+  friends: [
+    {id:1,name:'Priya Mehta',handle:'@priya_m',color:'#C84B9E',initials:'PM',online:true,msg:'Love the saree look!'},
+    {id:2,name:'Rohan Kumar',handle:'@rohan_k',color:'#2DD4BF',initials:'RK',online:false,msg:'Check out this jacket'},
+    {id:3,name:'Anika Singh',handle:'@anika_s',color:'#F5C842',initials:'AS',online:true,msg:'Which shoes go with this?'}
+  ],
+  activeChatId: null,
+  chatMessages: {1:[{mine:false,text:"Hey! Love your style 😍",time:"10:24 AM"},{mine:true,text:"Thanks Priya! Just got it from Myntra",time:"10:25 AM"}],2:[{mine:false,text:"Check this jacket out 🔥",time:"Yesterday"}],3:[{mine:false,text:"Which shoes go with this kurta?",time:"Mon"}]},
+  feedPosts: [
+    {user:'Priya M.',time:'2h ago',text:'Tried the AI try-on with a Diwali saree look — it matched the jewellery and dupatta perfectly! 🎉',likes:24,initials:'PM',color:'#C84B9E'},
+    {user:'Rohan K.',time:'5h ago',text:'Used the home décor tab for my living room renovation. The AI suggested Asian Paints "Misty Rose" — absolutely stunning!',likes:18,initials:'RK',color:'#2DD4BF'},
+    {user:'Anika S.',time:'1d ago',text:'Office outfit for Monday sorted in 2 mins! The occasion filter is so useful.',likes:31,initials:'AS',color:'#F5C842'},
+  ]
+};
+
+const USERS = {'demo@stylesutra.in':'demo123','ashok@aidesignsutra.com':'sutra2025','test@test.com':'test123'};
+
+// ── AUTH ───────────────────────────────────────────────────────
+function showAuthTab(tab){
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',['login','signup'][i]===tab));
+  document.getElementById('login-form').style.display = tab==='login'?'block':'none';
+  document.getElementById('signup-form').style.display = tab==='signup'?'block':'none';
+}
+
+function doLogin(){
+  const email = document.getElementById('login-email')?.value||'demo@stylesutra.in';
+  const pass  = document.getElementById('login-pass')?.value||'demo123';
+  const errEl = document.getElementById('login-error');
+  if(USERS[email] && USERS[email]===pass || true){ // allow demo
+    state.user = {name:'Ashok S.',email,initials:'AS'};
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    initApp();
+    if(errEl) errEl.style.display='none';
+  } else {
+    if(errEl){errEl.style.display='block';}
+  }
+}
+
+function doLogout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+function initApp(){
+  renderFeed();
+  renderChatList();
+  renderFriends();
+  renderFriendRequests();
+  showSection('tryon');
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────
+const screens = ['tryon','decor','feed','chat','friends','profile','saved'];
+function showSection(id){
+  screens.forEach(s=>{
+    const el = document.getElementById('screen-'+s);
+    if(el) el.style.display = s===id?'block':'none';
+  });
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active');
+  });
+}
+
+function setSTab(btn, divId){
+  const parent = btn.closest('.section-tabs');
+  parent.querySelectorAll('.stab').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');
+  const section = btn.closest('[id^="screen-"]');
+  section.querySelectorAll('[id^="'+divId.split('-')[0]+'"]').forEach(d=>{
+    d.style.display = d.id===divId?'block':'none';
+  });
+}
+
+function showRPTab(tab){
+  document.querySelectorAll('.rp-tab').forEach((t,i)=>t.classList.toggle('active',['notif','trending'][i]===tab));
+  document.getElementById('rp-notif').style.display = tab==='notif'?'block':'none';
+  document.getElementById('rp-trending').style.display = tab==='trending'?'block':'none';
+}
+
+// ── PHOTO UPLOADS ──────────────────────────────────────────────
+function handlePhoto(input){
+  const file=input.files[0]; if(!file)return;
+  const r=new FileReader(); r.onload=e=>{
+    const img=document.getElementById('photo-preview');
+    img.src=e.target.result; img.style.display='block';
+  }; r.readAsDataURL(file);
+}
+
+function handleRoom(input){
+  const file=input.files[0]; if(!file)return;
+  const r=new FileReader(); r.onload=e=>{
+    const img=document.getElementById('room-preview');
+    img.src=e.target.result; img.style.display='block';
+    setTimeout(()=>{
+      document.getElementById('room-measures').style.display='block';
+      const w=(3+Math.random()*4).toFixed(1)+'m';
+      const l=(4+Math.random()*3).toFixed(1)+'m';
+      const h=(2.4+Math.random()*1.2).toFixed(1)+'m';
+      document.getElementById('m-w').textContent=w;
+      document.getElementById('m-l').textContent=l;
+      document.getElementById('m-h').textContent=h;
+      document.getElementById('m-a').textContent=(parseFloat(w)*parseFloat(l)).toFixed(1)+'m²';
+    },700);
+  }; r.readAsDataURL(file);
+}
+
+// ── CHIPS / TOGGLES ────────────────────────────────────────────
+function setGender(btn,g){ state.gender=g; document.querySelectorAll('.gender-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+function toggleChip(el,cat){
+  el.classList.toggle('active');
+  state.selectedCats = [...document.querySelectorAll('#category-chips .chip.active')].map(c=>c.textContent.trim());
+}
+function setRoomType(el,rt){ state.roomType=rt; document.querySelectorAll('#screen-decor .chip-grid .chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); }
+
+// ── AI CALLS ───────────────────────────────────────────────────
+async function callAI(prompt, resultId, spinId, barId, fillId, actionsId){
+  document.getElementById(resultId.replace('-result','-empty')||resultId+'empty')?.style && (document.getElementById(resultId.replace('-result','')+'_empty')?.style.display||'');
+  const empties = {tryon:'tryon-empty', decor:'decor-empty'};
+  Object.values(empties).forEach(e=>{ const el=document.getElementById(e); if(el)el.style.display='none'; });
+  document.getElementById(spinId).style.display='block';
+  const aiEl = document.getElementById(resultId.includes('tryon')?'tryon-ai':'decor-ai');
+  if(aiEl) aiEl.style.display='none';
+  if(actionsId) document.getElementById(actionsId).style.display='none';
+  document.getElementById(barId).style.display='block';
+  animateBar(fillId);
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    const data = await res.json();
+    const text = data.content?.map(c=>c.text||'').join('')||'Could not get a response.';
+    document.getElementById(spinId).style.display='none';
+    document.getElementById(barId).style.display='none';
+    if(aiEl){ aiEl.innerHTML=fmtMd(text); aiEl.style.display='block'; }
+    if(actionsId){ document.getElementById(actionsId).style.display='flex'; }
+    const shareBtn = resultId.includes('tryon')?'share-btn':'share-decor-btn';
+    document.getElementById(shareBtn).style.display='inline-flex';
+  } catch(e){
+    document.getElementById(spinId).style.display='none';
+    document.getElementById(barId).style.display='none';
+    if(aiEl){ aiEl.textContent='Connection error. Please try again.'; aiEl.style.display='block'; }
+  }
+}
+
+function runTryon(){
+  const cats = state.selectedCats.length ? state.selectedCats.join(', ') : 'dress and accessories';
+  const occ = document.getElementById('occasion').value||'casual';
+  const clr = document.getElementById('color-pref').value||'any colour';
+  const prompt = `You are a professional fashion stylist specializing in Indian fashion. A ${state.gender} wants outfit suggestions for: ${occ}, colour preference: ${clr}. Match these items: ${cats}.\n\nGive:\n1. **Outfit concept** — 1-sentence vibe\n2. **Item recommendations** — for each of: ${cats}, give 2 India-market options with name, style, and INR price\n3. **Complete look** — how it ties together\n4. **Where to buy** — Myntra, Meesho, Ajio, Amazon India, etc.\n5. **Style tip** — one tip for a ${state.gender} in India\n\nKeep India-specific, practical, INR priced.`;
+  state.triedCount++;
+  document.getElementById('s-tried').textContent=state.triedCount;
+  document.getElementById('stat-tried')&&(document.getElementById('stat-tried').textContent=state.triedCount);
+  callAI(prompt,'tryon-result','tryon-spin','tryon-bar','tryon-fill','tryon-actions');
+}
+
+function runDecor(){
+  const w=document.getElementById('m-w').textContent, l=document.getElementById('m-l').textContent, h=document.getElementById('m-h').textContent;
+  const dims = w!=='—'?`Room: ${w} wide × ${l} long × ${h} ceiling.`:'Room dimensions not yet calculated.';
+  const style=document.getElementById('decor-style').value, budget=document.getElementById('decor-budget').value;
+  const prompt = `You are a professional Indian interior designer. Client wants to redecorate their ${state.roomType}. ${dims} Style: ${style}. Budget: ${budget}.\n\nProvide:\n1. **Room analysis** — spatial observations based on dimensions\n2. **Colour palette** — 3-4 paints with Asian Paints/Berger/Nerolac codes\n3. **Furniture** — 4-5 pieces with INR prices sized for the room\n4. **Lighting plan** — ceiling, ambient, task\n5. **Décor accents** — cushions, curtains, rugs, plants from Indian market\n6. **Vastu tip** — one Vastu Shastra suggestion for ${state.roomType}\n7. **Where to buy** — Urban Ladder, Pepperfry, Amazon India, IKEA India, etc.\n\nAll prices in INR. Be specific to room size.`;
+  state.roomCount++;
+  document.getElementById('s-rooms').textContent=state.roomCount;
+  callAI(prompt,'decor-result','decor-spin','decor-bar','decor-fill','decor-actions');
+}
+
+function askAI(q){
+  window.open(`https://claude.ai/new?q=${encodeURIComponent(q)}`,'_blank');
+}
+
+// ── FEED ───────────────────────────────────────────────────────
+function renderFeed(){
+  const container = document.getElementById('feed-posts'); if(!container)return;
+  container.innerHTML = state.feedPosts.map(p=>`
+    <div class="feed-post">
+      <div class="feed-post-header">
+        <div style="width:36px;height:36px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0">${p.initials}</div>
+        <div><h4>${p.user}</h4><span>${p.time}</span></div>
+      </div>
+      <div class="feed-post-img"><i class="ti ti-photo" style="font-size:32px;margin-bottom:.4rem;display:block"></i><span>Look preview</span></div>
+      <div style="padding:.75rem 1rem;font-size:.82rem;color:var(--text2);line-height:1.5">${p.text}</div>
+      <div class="feed-post-footer">
+        <button class="btn btn-sm"><i class="ti ti-heart"></i> ${p.likes}</button>
+        <button class="btn btn-sm"><i class="ti ti-message-2"></i> Comment</button>
+        <button class="btn btn-sm" onclick="openShare()"><i class="ti ti-share"></i> Share</button>
+        <button class="btn btn-sm"><i class="ti ti-bookmark"></i> Save</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── CHAT ───────────────────────────────────────────────────────
+function renderChatList(){
+  const el = document.getElementById('chat-list-items'); if(!el)return;
+  el.innerHTML = state.friends.map(f=>`
+    <div class="chat-list-item${state.activeChatId===f.id?' active':''}" onclick="openChat(${f.id})">
+      <div class="chat-avatar" style="background:${f.color};color:#fff">${f.initials}</div>
+      <div class="chat-info"><h4>${f.name}</h4><p>${f.msg}</p></div>
+      <div class="chat-meta"><span class="chat-time">Today</span>${f.id===1?'<span class="unread-badge">2</span>':''}</div>
+    </div>`).join('');
+}
+
+function openChat(id){
+  state.activeChatId=id;
+  renderChatList();
+  const f = state.friends.find(x=>x.id===id);
+  const msgs = state.chatMessages[id]||[];
+  const win = document.getElementById('chat-window');
+  win.innerHTML = `
+    <div class="chat-header">
+      <div style="width:34px;height:34px;border-radius:50%;background:${f.color};display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:#fff">${f.initials}</div>
+      <div style="flex:1"><h3>${f.name}</h3><p>${f.online?'<span class="online-dot"></span>Online':'Offline'}</p></div>
+      <button class="btn btn-sm" onclick="openShare()"><i class="ti ti-share"></i> Share look</button>
+    </div>
+    <div class="chat-messages" id="msgs-${id}">${msgs.map(m=>`
+      <div class="msg ${m.mine?'mine':'theirs'}">
+        <div class="msg-bubble">${m.text}</div>
+        <div class="msg-time">${m.time}</div>
+      </div>`).join('')}
+    </div>
+    <div class="chat-input-row">
+      <button class="btn btn-sm btn-icon" onclick="openShare()"><i class="ti ti-shirt"></i></button>
+      <input type="text" placeholder="Type a message…" id="chat-input-${id}" onkeydown="if(event.key==='Enter')sendMsg(${id})">
+      <button class="btn btn-primary btn-sm btn-icon" onclick="sendMsg(${id})"><i class="ti ti-send"></i></button>
+    </div>`;
+}
+
+function sendMsg(id){
+  const input = document.getElementById('chat-input-'+id);
+  const text = input.value.trim(); if(!text)return;
+  if(!state.chatMessages[id]) state.chatMessages[id]=[];
+  const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  state.chatMessages[id].push({mine:true,text,time:now});
+  input.value='';
+  openChat(id);
+  const msgEl = document.getElementById('msgs-'+id);
+  if(msgEl) msgEl.scrollTop=99999;
+}
+
+function startNewChat(){
+  showToast('Enter a @username in the search to start a new chat');
+}
+
+// ── FRIENDS ────────────────────────────────────────────────────
+const allUsers = [
+  {id:10,name:'Kavya Reddy',handle:'@kavya_r',color:'#C84B9E',initials:'KR'},
+  {id:11,name:'Amit Patel',handle:'@amit_p',color:'#2DD4BF',initials:'AP'},
+  {id:12,name:'Sneha Joshi',handle:'@sneha_j',color:'#F07B3A',initials:'SJ'},
+  {id:13,name:'Rahul Verma',handle:'@rahul_v',color:'#F5C842',initials:'RV'},
+];
+
+function renderFriends(){
+  const el=document.getElementById('my-friends'); if(!el)return;
+  document.getElementById('s-friends').textContent=state.friends.length;
+  document.getElementById('friends-count').textContent=state.friends.length;
+  el.innerHTML = state.friends.map(f=>`
+    <div class="friend-card">
+      <div class="friend-avatar" style="background:${f.color};color:#fff">${f.initials}</div>
+      <div class="friend-info"><h4>${f.name}</h4><p>${f.online?'<span class="online-dot"></span>Online':'Offline'} · ${f.handle}</p></div>
+      <div class="friend-actions">
+        <button class="btn btn-sm btn-teal" onclick="showSection('chat');setTimeout(()=>openChat(${f.id}),100)"><i class="ti ti-message-2"></i></button>
+        <button class="btn btn-sm" onclick="openShare()"><i class="ti ti-share"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function renderFriendRequests(){
+  const el=document.getElementById('friend-requests'); if(!el)return;
+  el.innerHTML=`
+    <div class="request-card">
+      <div class="friend-avatar" style="background:#C84B9E;color:#fff;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0">PM</div>
+      <div class="friend-info"><h4>Priya Mehta</h4><p>@priya_m · 4 mutual friends</p></div>
+      <div class="friend-actions">
+        <button class="btn btn-sm btn-primary" onclick="acceptRequest(this)"><i class="ti ti-check"></i> Accept</button>
+        <button class="btn btn-sm" onclick="this.closest('.request-card').remove()"><i class="ti ti-x"></i></button>
+      </div>
+    </div>`;
+}
+
+function acceptRequest(btn){
+  btn.closest('.request-card').remove();
+  state.friends.push({id:4,name:'Priya Mehta',handle:'@priya_m',color:'#C84B9E',initials:'PM',online:true,msg:'Just accepted!'});
+  renderFriends();
+  renderChatList();
+  showToast('Priya Mehta added to friends!');
+}
+
+function searchFriends(q){
+  const el=document.getElementById('friend-search-results'); if(!el)return;
+  if(!q.trim()){el.innerHTML='';return;}
+  const found = allUsers.filter(u=>u.name.toLowerCase().includes(q.toLowerCase())||u.handle.includes(q));
+  el.innerHTML = found.length ? found.map(u=>`
+    <div class="friend-card">
+      <div class="friend-avatar" style="background:${u.color};color:#fff;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700">${u.initials}</div>
+      <div class="friend-info"><h4>${u.name}</h4><p>${u.handle}</p></div>
+      <button class="btn btn-sm btn-primary" onclick="addFriend(${u.id},this)"><i class="ti ti-user-plus"></i> Add</button>
+    </div>`).join('')
+    : `<p style="font-size:.78rem;color:var(--text3);padding:.5rem 0">No users found for "${q}"</p>`;
+}
+
+function addFriend(id,btn){
+  const u=allUsers.find(x=>x.id===id);
+  state.friends.push({...u,online:false,msg:'Just added!'});
+  renderFriends();renderChatList();
+  btn.closest('.friend-card').innerHTML=`<div style="font-size:.78rem;color:var(--teal);padding:.25rem"><i class="ti ti-check"></i> Friend request sent!</div>`;
+  showToast('Friend request sent to '+u.name);
+}
+
+// ── SHARE ──────────────────────────────────────────────────────
+function openShare(){
+  const el=document.getElementById('share-modal'); el.classList.add('open');
+  document.getElementById('share-friends-row').innerHTML=state.friends.slice(0,4).map(f=>`
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer" onclick="shareFriend('${f.name}')">
+      <div style="width:38px;height:38px;border-radius:50%;background:${f.color};display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:#fff">${f.initials}</div>
+      <span style="font-size:.65rem;color:var(--text2)">${f.name.split(' ')[0]}</span>
+    </div>`).join('');
+}
+function closeShare(){ document.getElementById('share-modal').classList.remove('open'); }
+function shareAction(p){ closeShare(); showToast('Opening '+p+'…'); }
+function copyLink(){ navigator.clipboard?.writeText(document.getElementById('share-link').value); showToast('Link copied to clipboard!'); }
+function shareFriend(name){ closeShare(); showToast('Shared with '+name+'!'); }
+
+function saveToFeed(){
+  showToast('Look saved to your profile!');
+  state.savedCount++;
+  document.getElementById('s-saved').textContent=state.savedCount;
+}
+
+// ── UTILS ──────────────────────────────────────────────────────
+function animateBar(id){
+  const el=document.getElementById(id); if(!el)return; el.style.width='0%';
+  let w=0; const iv=setInterval(()=>{ w+=Math.random()*9; if(w>=90){w=90;clearInterval(iv)} el.style.width=w+'%'; },320);
+}
+
+function fmtMd(text){
+  return text
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^#{1,3}\s(.+)$/gm,'<p style="font-weight:600;color:var(--accent);margin:.6rem 0 .2rem;font-size:.85rem">$1</p>')
+    .replace(/\n\n/g,'</p><p style="margin:.2rem 0">')
+    .replace(/\n/g,'<br>')
+    .replace(/^/,'<p style="margin:.2rem 0">')
+    .replace(/$/,'</p>');
+}
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── SECTION TABS helper for decor ─────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{});
+</script>
+</body>
+</html>

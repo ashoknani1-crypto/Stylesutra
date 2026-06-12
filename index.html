@@ -637,7 +637,7 @@ body::before{
                   <div class="chip" onclick="setRoomType(this,'Kitchen')">Kitchen</div>
                   <div class="chip" onclick="setRoomType(this,'Home office')">Office</div>
                   <div class="chip" onclick="setRoomType(this,'Pooja room')">Pooja room</div>
-                  <div class="chip" onclick="setRoomType(this,'Kid\'s room')">Kid's room</div>
+                  <div class="chip" onclick="setRoomType(this,'Kid's room')">Kid's room</div>
                 </div>
                 <div class="form-group">
                   <label>Décor style</label>
@@ -1006,10 +1006,11 @@ async function callAI(prompt, resultId, spinId, barId, fillId, actionsId){
   document.getElementById(barId).style.display='block';
   animateBar(fillId);
   try{
+    // Note: This will fail in a browser due to CORS and missing API key.
     const res = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:'claude-3-5-sonnet-20240620',max_tokens:1000,messages:[{role:'user',content:prompt}]})
     });
     const data = await res.json();
     const text = data.content?.map(c=>c.text||'').join('')||'Could not get a response.';
@@ -1022,7 +1023,19 @@ async function callAI(prompt, resultId, spinId, barId, fillId, actionsId){
   } catch(e){
     document.getElementById(spinId).style.display='none';
     document.getElementById(barId).style.display='none';
-    if(aiEl){ aiEl.textContent='Connection error. Please try again.'; aiEl.style.display='block'; }
+    if(aiEl){
+      aiEl.innerHTML=`
+        <div style="background: rgba(255, 107, 122, 0.1); border: 1px solid #ff6b7a; border-radius: var(--radius-sm); padding: 1rem; color: #ff6b7a; margin-top: 1rem;">
+          <h4 style="margin-bottom: 0.5rem;"><i class="ti ti-alert-triangle"></i> API Connection Failed</h4>
+          <p style="font-size: 0.8rem; line-height: 1.5; color: var(--text);">To make this AI feature work, you need two things:</p>
+          <ul style="font-size: 0.8rem; line-height: 1.5; color: var(--text2); margin-left: 1.2rem; margin-top: 0.5rem;">
+            <li><strong>An API Key:</strong> A valid Anthropic Claude API key must be provided in the headers.</li>
+            <li><strong>A Backend Server:</strong> Direct browser requests are blocked by CORS. You must route this fetch request through a backend proxy (e.g., Node.js/Express).</li>
+          </ul>
+        </div>
+      `;
+      aiEl.style.display='block';
+    }
   }
 }
 
@@ -1030,7 +1043,16 @@ function runTryon(){
   const cats = state.selectedCats.length ? state.selectedCats.join(', ') : 'dress and accessories';
   const occ = document.getElementById('occasion').value||'casual';
   const clr = document.getElementById('color-pref').value||'any colour';
-  const prompt = `You are a professional fashion stylist specializing in Indian fashion. A ${state.gender} wants outfit suggestions for: ${occ}, colour preference: ${clr}. Match these items: ${cats}.\n\nGive:\n1. **Outfit concept** — 1-sentence vibe\n2. **Item recommendations** — for each of: ${cats}, give 2 India-market options with name, style, and INR price\n3. **Complete look** — how it ties together\n4. **Where to buy** — Myntra, Meesho, Ajio, Amazon India, etc.\n5. **Style tip** — one tip for a ${state.gender} in India\n\nKeep India-specific, practical, INR priced.`;
+  const prompt = `You are a professional fashion stylist specializing in Indian fashion. A ${state.gender} wants outfit suggestions for: ${occ}, colour preference: ${clr}. Match these items: ${cats}.
+
+Give:
+1. **Outfit concept** — 1-sentence vibe
+2. **Item recommendations** — for each of: ${cats}, give 2 India-market options with name, style, and INR price
+3. **Complete look** — how it ties together
+4. **Where to buy** — Myntra, Meesho, Ajio, Amazon India, etc.
+5. **Style tip** — one tip for a ${state.gender} in India
+
+Keep India-specific, practical, INR priced.`;
   state.triedCount++;
   document.getElementById('s-tried').textContent=state.triedCount;
   document.getElementById('stat-tried')&&(document.getElementById('stat-tried').textContent=state.triedCount);
@@ -1041,7 +1063,18 @@ function runDecor(){
   const w=document.getElementById('m-w').textContent, l=document.getElementById('m-l').textContent, h=document.getElementById('m-h').textContent;
   const dims = w!=='—'?`Room: ${w} wide × ${l} long × ${h} ceiling.`:'Room dimensions not yet calculated.';
   const style=document.getElementById('decor-style').value, budget=document.getElementById('decor-budget').value;
-  const prompt = `You are a professional Indian interior designer. Client wants to redecorate their ${state.roomType}. ${dims} Style: ${style}. Budget: ${budget}.\n\nProvide:\n1. **Room analysis** — spatial observations based on dimensions\n2. **Colour palette** — 3-4 paints with Asian Paints/Berger/Nerolac codes\n3. **Furniture** — 4-5 pieces with INR prices sized for the room\n4. **Lighting plan** — ceiling, ambient, task\n5. **Décor accents** — cushions, curtains, rugs, plants from Indian market\n6. **Vastu tip** — one Vastu Shastra suggestion for ${state.roomType}\n7. **Where to buy** — Urban Ladder, Pepperfry, Amazon India, IKEA India, etc.\n\nAll prices in INR. Be specific to room size.`;
+  const prompt = `You are a professional Indian interior designer. Client wants to redecorate their ${state.roomType}. ${dims} Style: ${style}. Budget: ${budget}.
+
+Provide:
+1. **Room analysis** — spatial observations based on dimensions
+2. **Colour palette** — 3-4 paints with Asian Paints/Berger/Nerolac codes
+3. **Furniture** — 4-5 pieces with INR prices sized for the room
+4. **Lighting plan** — ceiling, ambient, task
+5. **Décor accents** — cushions, curtains, rugs, plants from Indian market
+6. **Vastu tip** — one Vastu Shastra suggestion for ${state.roomType}
+7. **Where to buy** — Urban Ladder, Pepperfry, Amazon India, IKEA India, etc.
+
+All prices in INR. Be specific to room size.`;
   state.roomCount++;
   document.getElementById('s-rooms').textContent=state.roomCount;
   callAI(prompt,'decor-result','decor-spin','decor-bar','decor-fill','decor-actions');
@@ -1218,8 +1251,11 @@ function fmtMd(text){
   return text
     .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
     .replace(/^#{1,3}\s(.+)$/gm,'<p style="font-weight:600;color:var(--accent);margin:.6rem 0 .2rem;font-size:.85rem">$1</p>')
-    .replace(/\n\n/g,'</p><p style="margin:.2rem 0">')
-    .replace(/\n/g,'<br>')
+    .replace(/
+
+/g,'</p><p style="margin:.2rem 0">')
+    .replace(/
+/g,'<br>')
     .replace(/^/,'<p style="margin:.2rem 0">')
     .replace(/$/,'</p>');
 }

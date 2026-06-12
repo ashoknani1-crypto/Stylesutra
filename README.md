@@ -1,2 +1,15 @@
 # Stylesutra
-a person can choose his/her matching dress, goggles, shoes by just uploading his total photo at once, which is help full to save time and try multiple dress just through online trail. also, in next tab home decore  by just uploading user/visitors requred room image ( the app takes the mesirements of room cornor to cornor,
+
+An AI-powered platform for virtual fashion try-ons and automated home space measurements.
+
+## Features
+- **Virtual Try-On:** Upload a photo to test clothes, accessories, and shoes.
+- **Smart Decor:** Upload a room photo to calculate dimensions using computer vision.
+
+## Getting Started
+1. Clone this repository.
+2. Install dependencies (Python, OpenCV, MediaPipe).
+3. Run the main script to start the application.
+
+## License
+This project is licensed under the MIT License.
